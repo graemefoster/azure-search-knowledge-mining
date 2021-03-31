@@ -50,6 +50,7 @@ function Deploy
     $appInsightsName = $uniqueName + "insights";
     $storageAccountName = $uniqueName + "str";
     $storageContainerName = "documents";
+    $mediaServiceName = $uniqueName + "media";
         
     $dataSourceName = $uniqueName + "-datasource";
     $skillsetName = $uniqueName + "-skillset";
@@ -81,6 +82,7 @@ function Deploy
         Write-Host "skillsetName: '$skillsetName'";
         Write-Host "indexName: '$indexName'";
         Write-Host "indexerName: '$indexerName'";
+        Write-Host "mediaServicesName: '$mediaServiceName'";
         Write-Host "------------------------------------------------------------";
 	}
 
@@ -104,7 +106,7 @@ function Deploy
     function PrepareSubscription
     {
         # Register RPs
-        $resourceProviders = @("microsoft.cognitiveservices", "microsoft.insights", "microsoft.search", "microsoft.storage");
+        $resourceProviders = @("microsoft.cognitiveservices", "microsoft.insights", "microsoft.search", "microsoft.storage", "microsoft.media", "microsoft.eventgrid");
         if ($resourceProviders.length) {
             Write-Host "Registering resource providers"
             foreach ($resourceProvider in $resourceProviders) {
@@ -162,7 +164,7 @@ function Deploy
             -Name $storageContainerName `
             -Context $storageContext `
             -Permission Off
-
+    
         Write-Host "Uploading sample_documents directory";
         Push-Location "../sample_documents"
         ls -File -Recurse | Set-AzStorageBlobContent -Container $storageContainerName -Context $storageContext -Force
@@ -297,6 +299,20 @@ function Deploy
 
     CreateWebApp;
 
+    function CreateVideoIndexer
+    {
+        # Create a Video Indexer
+        Write-Host "Creating Video Indexer";
+        $videoIndexer = New-AzMediaService `
+            -Name $mediaServiceName `
+            -Location $location `
+            -ResourceGroupName $resourceGroupName `
+            -StorageAccountId $storageAccount.Id `
+
+	}
+
+    CreateVideoIndexer;
+    
     function PrintAppsettings
     {
         Write-Host "Copy and paste the following values to update the appsettings.json file described in the next folder:";
