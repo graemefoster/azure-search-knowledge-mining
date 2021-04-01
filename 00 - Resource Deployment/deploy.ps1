@@ -34,6 +34,8 @@ function Deploy
     # Read parameters from user.
     Write-Host "Press enter to use [default] value."
     Write-Host "For uniqueName, please enter a string with 10 or less characters."
+    Write-Host "For video-indexing provide your Azure Video Indexer account ID. Blank to disable video indexing. https://docs.microsoft.com/en-us/azure/media-services/video-indexer/connect-to-azure"
+    
     while (!($uniqueName = Read-Host "uniqueName")) { Write-Host "You must provide a uniqueName."; }
     while (!($resourceGroupName = Read-Host "resourceGroupName")) { Write-Host "You must provide a resourceGroupName."; }
     while (!($subscriptionId = Read-Host "subscriptionId")) { Write-Host "You must provide a subscriptionId."; }
@@ -42,10 +44,16 @@ function Deploy
     if (!($location = Read-Host "location [$defaultLocation]")) { $location = $defaultLocation }
     $defaultSearchSku = "basic"
     if (!($searchSku = Read-Host "searchSku [$defaultSearchSku]")) { $searchSku = $defaultSearchSku }
-        
+
+    while (!($videoIndexingAccountId = Read-Host "videoIndexingAccountId")) { Write-Host "Azure Video Indexer ID or blank"; }
+    If ('' -ne $videoIndexingAccountId) {
+        while (!($videoIndexingAccountKey = Read-Host "videoIndexingAccountKey")) { Write-Host "Azure Video Indexer Key"; }
+    }
+
     # Generate derivative parameters.
     $searchServiceName = $uniqueName + "search";
     $webappname = $uniqueName + "app";
+    $functionappname = $uniqueName + "functions";
     $cogServicesName = $uniqueName + "cog";
     $appInsightsName = $uniqueName + "insights";
     $storageAccountName = $uniqueName + "str";
@@ -83,6 +91,7 @@ function Deploy
         Write-Host "indexName: '$indexName'";
         Write-Host "indexerName: '$indexerName'";
         Write-Host "mediaServicesName: '$mediaServiceName'";
+        Write-Host "videoIndexingAccountId: '$videoIndexingAccountId'"
         Write-Host "------------------------------------------------------------";
 	}
 
@@ -144,13 +153,17 @@ function Deploy
         Write-Host "Creating Storage Account";
 
         # Create the resource using the API
-        $storageAccount = New-AzStorageAccount `
-            -ResourceGroupName $resourceGroupName `
-            -Name $storageAccountName `
-            -Location $location `
-            -SkuName Standard_LRS `
-            -Kind StorageV2 
+        $storageAccount = Get-AzStorageAccount -ResourceGroupName $resourceGroupName -Name $storageAccountName -ErrorAction Ignore
+        If ($null -eq $storageAccount) {
+            $storageAccount = New-AzStorageAccount `
+                -ResourceGroupName $resourceGroupName `
+                -Name $storageAccountName `
+                -Location $location `
+                -SkuName Standard_LRS `
+                -Kind StorageV2 
+        }
         
+        $global:storageAccountId = $storageAccount.Id
         $global:storageAccountKey = (Get-AzStorageAccountKey -ResourceGroupName $resourceGroupName -StorageAccountName $storageAccountName)[0].Value        
         $global:storageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=' + $storageAccountName + ';AccountKey=' + $global:storageAccountKey + ';EndpointSuffix=core.windows.net' 
         Write-Host "Storage Account Key: '$global:storageAccountKey'";
@@ -275,6 +288,28 @@ function Deploy
             -ResourceGroupName $resourceGroupName `
             -WarningAction SilentlyContinue
 
+        $webApp = Set-AzWebApp -ResourceGroupName $resourceGroupName -Name $webappname -AssignIdentity $true
+
+        If ($null -ne $videoIndexingAccountId) {
+            Write-Host "Creating video indexing function app";
+            $functionApp = New-AzFunctionApp `
+                -ResourceGroupName $resourceGroupName `
+                -Name $functionappname `
+                -StorageAccountName $storageAccountName `
+                -Runtime DotNet `
+                -OSType Windows `
+                -FunctionsVersion 3 `
+                -IdentityType SystemAssigned `
+                -PlanName $webappname `
+                -WarningAction SilentlyContinue
+
+            $global:functionAppIdentity = $functionApp.Identity
+
+            Write-Host "Setting configuration on function app"
+            Update-AzFunctionAppSetting -Name $functionappname -ResourceGroupName $resourceGroupName -AppSetting @{ "MediaIndex:AccountId" = $videoIndexingAccountId, "MediaIndex:AccountKey" = $videoIndexingAccountKey }
+        } else {
+            Write-Host "Skipping video indexing";
+        }
 
         # Create an application insights instance
         Write-Host "Creating App Insights";
@@ -307,11 +342,16 @@ function Deploy
             -Name $mediaServiceName `
             -Location $location `
             -ResourceGroupName $resourceGroupName `
-            -StorageAccountId $storageAccount.Id `
+            -StorageAccountId $storageAccountId
+
+        # Write-Host "Giving Web App access to video services";
+        # New-AzRoleAssignment -Scope $videoIndexer.Id -ObjectId $functionAppIdentity.PrincipalId -RoleDefinitionIName "Contributor"
 
 	}
 
-    CreateVideoIndexer;
+    If ($null -ne $videoIndexingAccountId) {
+        CreateVideoIndexer;
+    }
     
     function PrintAppsettings
     {
