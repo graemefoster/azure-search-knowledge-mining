@@ -13,10 +13,10 @@ namespace CognitiveSearch.UI.Controllers
     public class VideoController : ControllerBase
     {
         private readonly ILogger<VideoController> _logger;
-        private HttpClient _httpClient;
-        private string _location;
-        private string _accountId;
-        private string _accountKey;
+        private readonly HttpClient _httpClient;
+        private readonly string _location;
+        private readonly string _accountId;
+        private readonly string _accountKey;
 
         public VideoController(ILogger<VideoController> logger, IHttpClientFactory httpClientFactory, IConfiguration configuration)
         {
@@ -27,6 +27,9 @@ namespace CognitiveSearch.UI.Controllers
             _accountKey = configuration["VideoIndexerAccountKey"];
         }
 
+        /// <summary>
+        /// Looks for the summary thumbnail in the insights for the video. An optimisation would be to cache this when we have indexed the video so we can return it from blob storage.
+        /// </summary>
         [Route("{videoId}/thumbnail")]
         public async Task<IActionResult> ThumbnailImage(string videoId)
         {
@@ -38,6 +41,7 @@ namespace CognitiveSearch.UI.Controllers
 
             var metadata = (JObject)JsonConvert.DeserializeObject(await _httpClient.GetStringAsync($"https://api.videoindexer.ai/{_location}/Accounts/{_accountId}/Videos/{videoId}/Index?accessToken={accessToken}"));
             var thumbnailId = metadata["summarizedInsights"].Value<string>("thumbnailId");
+
             return base.File(
                 await _httpClient.GetByteArrayAsync($"https://api.videoindexer.ai/{_location}/Accounts/{_accountId}/Videos/{videoId}/Thumbnails/{thumbnailId}?format=Jpeg&accessToken={accessToken}"),
                 "image/jpeg");
@@ -53,6 +57,7 @@ namespace CognitiveSearch.UI.Controllers
             request.Headers.Add("Ocp-Apim-Subscription-Key", _accountKey);
             var accessToken = JsonConvert.DeserializeObject<string>(await (await _httpClient.SendAsync(request)).Content.ReadAsStringAsync());
 
+            //Warning - leaks an access token back to the client so we can embed the insights widget. The token is scoped to the one video.
             return Redirect($"https://api.videoindexer.ai/{_location}/Accounts/{_accountId}/Videos/{videoId}/InsightsWidget?widgetType=People&widgetType=Sentiments&widgetType=Keywords&widgetType=Search&accessToken={accessToken}");
         }
 
@@ -65,6 +70,7 @@ namespace CognitiveSearch.UI.Controllers
             request.Headers.Add("Ocp-Apim-Subscription-Key", _accountKey);
             var accessToken = JsonConvert.DeserializeObject<string>(await (await _httpClient.SendAsync(request)).Content.ReadAsStringAsync());
             
+            //Warning - leaks an access token back to the client so we can embed the insights widget. The token is scoped to the one video.
             return Redirect($"https://api.videoindexer.ai/{_location}/Accounts/{_accountId}/Videos/{videoId}/PlayerWidget?accessToken={accessToken}");
         }
 
