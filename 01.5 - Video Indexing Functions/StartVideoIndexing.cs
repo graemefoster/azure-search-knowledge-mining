@@ -10,9 +10,9 @@ namespace Azure.KnowledgeMining
 {
     public static class StartVideoIndexing
     {
-        [FunctionName("start_video_indexing")]
+        [FunctionName("StartVideoIndexing")]
         public static async Task Run(
-            [BlobTrigger("video-drop/{name}", Connection = "kmvgrfstr_STORAGE")]
+            [BlobTrigger("video-drop/{name}", Connection = "MediaIndexer_STORAGE")]
             ICloudBlob myBlob, 
             string name, 
             ILogger log)
@@ -26,8 +26,10 @@ namespace Azure.KnowledgeMining
 
             log.LogInformation("Start processing {Name}", name);
             var sasKey = CreateSasKeyForVideoIndexerToRetrieveBlob(myBlob);
+            log.LogInformation("Generated Sas key for video indexer");
             var result = await InitiateVideoIndexing(log, sasKey, myBlob);
-            log.LogInformation(result);
+            log.LogInformation("Initiated video indexing");
+            log.LogInformation("Indexer result: {Result}", result);
         }
 
         private static async Task<string> InitiateVideoIndexing(ILogger logger, string sasKey, ICloudBlob blob)
@@ -35,6 +37,7 @@ namespace Azure.KnowledgeMining
             var endpoint = "https://api.videoindexer.ai";
             var accountId = Environment.GetEnvironmentVariable("MediaIndexer_AccountId");
             var location = Environment.GetEnvironmentVariable("MediaIndexer_Location");
+            var callbackUrl = Uri.EscapeDataString(Environment.GetEnvironmentVariable("MediaIndexer_CallbackUrl"));
             var privacy = "Private";
 
             var httpClient = new HttpClient();
@@ -45,8 +48,8 @@ namespace Azure.KnowledgeMining
 
             var blobUri = Uri.EscapeDataString(blob.Uri.AbsoluteUri + sasKey);
             var response = await httpClient.PostAsync(
-                $"{endpoint}/{location}/Accounts/{accountId}/Videos?accessToken={accessToken}&name={blob.Name}&videoUrl={blobUri}&privacy={privacy}", 
-                new ByteArrayContent(Array.Empty<byte>())); //"&callbackUrl=http://")
+                $"{endpoint}/{location}/Accounts/{accountId}/Videos?accessToken={accessToken}&name={Uri.EscapeDataString(blob.Name)}&videoUrl={blobUri}&privacy={privacy}&callbackUrl={callbackUrl}", 
+                new ByteArrayContent(Array.Empty<byte>()));
 
             return await response.Content.ReadAsStringAsync();
         }
