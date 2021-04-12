@@ -58,7 +58,6 @@ function Deploy
     $appInsightsName = $uniqueName + "insights";
     $storageAccountName = $uniqueName + "str";
     $storageContainerName = "documents";
-    $mediaServiceName = $uniqueName + "media";
         
     $dataSourceName = $uniqueName + "-datasource";
     $skillsetName = $uniqueName + "-skillset";
@@ -90,7 +89,6 @@ function Deploy
         Write-Host "skillsetName: '$skillsetName'";
         Write-Host "indexName: '$indexName'";
         Write-Host "indexerName: '$indexerName'";
-        Write-Host "mediaServicesName: '$mediaServiceName'";
         Write-Host "videoIndexingAccountId: '$videoIndexingAccountId'"
         Write-Host "------------------------------------------------------------";
 	}
@@ -334,25 +332,6 @@ function Deploy
 
     CreateWebApp;
 
-    function CreateVideoIndexer
-    {
-        # Create a Video Indexer
-        Write-Host "Creating Video Indexer";
-        $videoIndexer = New-AzMediaService `
-            -Name $mediaServiceName `
-            -Location $location `
-            -ResourceGroupName $resourceGroupName `
-            -StorageAccountId $storageAccountId
-
-        # Write-Host "Giving Web App access to video services";
-        # New-AzRoleAssignment -Scope $videoIndexer.Id -ObjectId $functionAppIdentity.PrincipalId -RoleDefinitionIName "Contributor"
-
-	}
-
-    If ($null -ne $videoIndexingAccountId) {
-        CreateVideoIndexer;
-    }
-    
     function PrintAppsettings
     {
         Write-Host "Copy and paste the following values to update the appsettings.json file described in the next folder:";
