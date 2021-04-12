@@ -231,10 +231,14 @@ function UpdateResults(data) {
 
         // get path
         if (data.isPathBase64Encoded) {
-            path = Base64Decode(document.metadata_storage_path) + token;
+            path = Base64Decode(document.metadata_storage_path);
         }
         else {
-            path = document.metadata_storage_path + token;
+            path = document.metadata_storage_path;
+        }
+
+        if (!path.startsWith('indexed-video/')) {
+            path = path + token;
         }
 
         if (document["metadata_storage_name"] !== undefined) {
@@ -279,7 +283,11 @@ function UpdateResults(data) {
             var resultContent = "";
             var imageContent = "";
 
-            if (pathLower.includes(".jpg") || pathLower.includes(".png")) {
+            if (pathLower.startsWith('indexed-video/')) {
+                icon = "ms-Icon--Video";
+                imageContent = `<img class="img-result" style='max-width:100%;' src="/api/video/${path.substring('indexed-video/'.length)}/thumbnail" />`;
+            } 
+            else if (pathLower.includes(".jpg") || pathLower.includes(".png")) {
                 icon = "ms-Icon--FileImage";
                 imageContent = `<img class="img-result" style='max-width:100%;' src="${path}"/>`;
             }

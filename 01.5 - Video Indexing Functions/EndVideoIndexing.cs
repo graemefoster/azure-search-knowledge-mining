@@ -63,7 +63,7 @@ namespace Azure.KnowledgeMining
             
             var httpClient = new HttpClient();
             httpClient.DefaultRequestHeaders.Add("api-key", searchApiKey);
-            var indexRequest = new { value = new[] {searchIndexModel.ToSearchIndexUpload(documentKey, documentName)} };
+            var indexRequest = new { value = new[] {searchIndexModel.ToSearchIndexUpload($"indexed-video/{documentKey}", documentName)} };
             
             var request = new HttpRequestMessage(HttpMethod.Post, $"https://{searchService}.search.windows.net/indexes/{searchIndex}/docs/index?api-version=2020-06-30")
             {
@@ -109,7 +109,7 @@ namespace Azure.KnowledgeMining
             var accessToken = JsonConvert.DeserializeObject<string>(await httpClient.GetStringAsync($"{endpoint}/auth/{location}/Accounts/{accountId}/AccessToken?allowEdit=true"));
             logger.LogInformation("Retrieved access token {Token}", accessToken);
 
-            var response = await httpClient.GetStringAsync($"{endpoint}/{location}/Accounts/{accountId}/Videos/{videoId}/Index?accessToken={accessToken}");
+            var response = await httpClient.GetStringAsync($"{endpoint}/{location}/Accounts/{accountId}/Videos/{videoId}/Index?includeStreamingUrls=True&accessToken={accessToken}");
             logger.LogInformation("Retrieved insights for video Id:{Id}", videoId);
 
             return response;
