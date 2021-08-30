@@ -105,8 +105,8 @@
         "searchServiceName": "[concat(parameters('resourcePrefix'), '-search-service')]",
         "cognitiveServicesAccountName": "[concat(parameters('resourcePrefix'), '-cognitive-services')]",
         "websitePrivateDnsZoneName": "privatelink.azurewebsites.net",
-        "storagePrivateDnsZoneName": "[concat(variables('storageAccountName'), '.blob.core.windows.net')]",
-        "searchPrivateDnsZoneName": "[concat(variables('searchServiceName'), '.search.windows.net')]"
+        "storagePrivateDnsZoneName": "privatelink.blob.core.windows.net",
+        "searchPrivateDnsZoneName": "privatelink.search.windows.net"
     },
     "resources": [
         {
@@ -124,12 +124,15 @@
         {
             "name": "[variables('storageAccountName')]",
             "type": "Microsoft.Storage/storageAccounts",
-            "apiVersion": "2018-07-01",
+            "apiVersion": "2021-04-01",
             "location": "[parameters('location')]",
             "kind": "StorageV2",
             "sku": {
                 "name": "[parameters('storageAccountType')]",
                 "tier": "Standard"
+            },
+            "properties" : {
+                "allowBlobPublicAccess" : false
             }
         },
         {
