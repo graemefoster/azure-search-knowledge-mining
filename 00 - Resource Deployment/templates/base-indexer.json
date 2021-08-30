@@ -41,7 +41,8 @@
     "maxFailedItemsPerBatch": -1,
     "configuration": {
       "dataToExtract": "contentAndMetadata",
-      "imageAction": "generateNormalizedImages"
+      "imageAction": "generateNormalizedImages",
+      "executionEnvironment" : "Public"
     }
   }
 }
