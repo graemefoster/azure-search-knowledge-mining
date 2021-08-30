@@ -9,9 +9,6 @@ trigger:
     include:
     - "00 - Resource Deployment"
 
-variables:
-- group: Platform-POC
-
 stages:
 
 - stage: 'PreparePlatform'
