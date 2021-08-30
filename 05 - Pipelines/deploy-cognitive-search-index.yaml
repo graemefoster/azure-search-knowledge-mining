@@ -1,5 +1,8 @@
 name: "Platform"
 
+pool:
+  name: Default
+
 trigger:
   branches:
     include:
@@ -15,8 +18,6 @@ stages:
   displayName: 'Deploy Cognitive Search Indexes'
   jobs:
   - job: 'DeployIndexes'
-    pool:
-      vmImage: 'ubuntu-latest'  
     steps:
     - task: AzurePowerShell@5
       name: 'DeployIndex'
