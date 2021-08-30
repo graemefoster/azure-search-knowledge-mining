@@ -6,7 +6,7 @@ param(
     [Parameter(Mandatory)] $SearchServiceKey
 )
 
-$searchServiceName = $ResourcePrefix + "search-service";
+$searchServiceName = $ResourcePrefix + "-search-service";
 $storageContainerName = "documents";
 
 $dataSourceName = $ResourcePrefix + "-datasource";
