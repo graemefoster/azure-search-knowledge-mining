@@ -34,7 +34,7 @@ stages:
         scriptArguments: 
           -ResourcePrefix '$(ResourcePrefix)' `
           -CognitiveServicesKey '$(CognitiveServicesKey)' `
-          -RootDirectory '.\00 - Resource Deployment' `
+          -RootDirectory '.\00 - Resource Deployment\' `
           -StorageConnectionString '$(StorageConnectionString)' `
           -SearchServiceKey '$(SearchServiceKey)'
 
