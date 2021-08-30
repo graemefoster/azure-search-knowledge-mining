@@ -318,10 +318,24 @@
                 "name": "[parameters('searchServiceSku')]"
             },
             "properties": {
-                "publicNetworkAccess": "disabled",
-                "networkRuleSet": {
+                "publicNetworkAccess": "disabled"
+            },
+            "resources": [
+                {
+                    "name": "indexer-blob-access",
+                    "type": "sharedPrivateLinkResources",
+                    "dependsOn": [
+                        "[variables('searchServiceName')]",
+                        "[resourceId('Microsoft.Network/privateEndpoints', variables('storagePrivateEndpointName'))]"
+                    ],
+                    "apiVersion": "2020-08-01",
+                    "properties": {
+                        "privateLinkResourceId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+                        "groupId": "blob",
+                        "requestMessage": "Access to blob storage from search indexer"
+                    }
                 }
-            }
+            ]
         },
         {
             "type": "Microsoft.Network/privateEndpoints",
@@ -346,6 +360,21 @@
                         }
                     }
                 ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+            "apiVersion": "2020-01-01",
+            "name": "[concat(variables('searchPrivateDnsZoneName'), '/search-vnet-link')]",
+            "location": "global",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', variables('searchPrivateDnsZoneName'))]"
+            ],
+            "properties": {
+                "virtualNetwork": {
+                    "id": "[parameters('vnetId')]"
+                },
+                "registrationEnabled": false
             }
         },
         {
