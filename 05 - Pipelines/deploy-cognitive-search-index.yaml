@@ -12,6 +12,10 @@ trigger:
     include:
     - "00 - Resource Deployment"
 
+
+variables:
+- group: KnowledgeMiningPortal
+
 stages:
 
 - stage: 'PreparePlatform'
@@ -29,5 +33,8 @@ stages:
         workingDirectory: './platform'
         azurePowerShellVersion: latestVersion
         scriptArguments: 
-          -ResourcePrefix 'kmpgrf' `
-          -RootDirectory '.\'
+          -ResourcePrefix '$(ResourcePrefix)' `
+          -CognitiveServicesKey '$(CognitiveServicesKey)' `
+          -RootDirectory '.\' `
+          -StorageConnectionString '$(StorageConnectionString)'
+

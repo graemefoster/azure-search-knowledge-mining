@@ -7,11 +7,6 @@ $skillsetName = $ResourcePrefix + "-skillset";
 $indexName = $ResourcePrefix + "-index";
 $indexerName = $ResourcePrefix + "-indexer";
 
-$global:storageAccountKey = "";
-$global:searchServiceKey = "";
-$global:storageConnectionString = "";
-$global:cogServicesKey = "";
-
 function CreateSearchIndex
 {
     Write-Host "Creating Search Index"; 
@@ -24,7 +19,7 @@ function CreateSearchIndex
         )
 
         $headers = @{
-            'api-key' = $global:searchServiceKey
+            'api-key' = $SearchServiceKey
             'Content-Type' = 'application/json' 
             'Accept' = 'application/json' 
         }
@@ -37,13 +32,13 @@ function CreateSearchIndex
 
     # Create the datasource
     $dataSourceBody = Get-Content -Path "$RootDirectory\templates\base-datasource.json"
-    $dataSourceBody = $dataSourceBody -replace "{{env_storage_connection_string}}", $global:storageConnectionString      
+    $dataSourceBody = $dataSourceBody -replace "{{env_storage_connection_string}}", $StorageConnectionString      
     $dataSourceBody = $dataSourceBody -replace "{{env_storage_container}}", $storageContainerName        
     CallSearchAPI -url ("/datasources/"+$dataSourceName+"?api-version=2019-05-06") -body $dataSourceBody
 
     # Create the skillset
     $skillBody = Get-Content -Path "$RootDirectory\templates\base-skills.json"
-    $skillBody = $skillBody -replace "{{cog_services_key}}", $global:cogServicesKey  
+    $skillBody = $skillBody -replace "{{cog_services_key}}", $CognitiveServicesKey  
     CallSearchAPI -url ("/skillsets/"+$skillsetName+"?api-version=2019-05-06") -body $skillBody
 
     # Create the index
