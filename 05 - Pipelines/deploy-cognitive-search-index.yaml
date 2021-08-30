@@ -36,5 +36,6 @@ stages:
           -ResourcePrefix '$(ResourcePrefix)' `
           -CognitiveServicesKey '$(CognitiveServicesKey)' `
           -RootDirectory '.\' `
-          -StorageConnectionString '$(StorageConnectionString)'
+          -StorageConnectionString '$(StorageConnectionString)' `
+          -SearchServiceKey '$(SearchServiceKey)'
 
