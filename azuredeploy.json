@@ -132,8 +132,22 @@
                 "tier": "Standard"
             },
             "properties" : {
-                "allowBlobPublicAccess" : false
-            }
+                "allowBlobPublicAccess" : false,
+                "networkAcls" : {
+                    "defaultAction" : "Deny",
+                    "bypass" : "Logging,Metrics"
+                }
+            },
+            "resources" : [
+                {
+                    "type" : "blobServices/containers",
+                    "apiVersion" : "2021-04-01",
+                    "name" : "default/documents",
+                    "dependsOn" : [
+                        "[variables('storageAccountName')]"
+                    ]
+                }
+            ]
         },
         {
             "type": "Microsoft.Network/privateEndpoints",
