@@ -1,0 +1,35 @@
+name: "Platform"
+
+trigger:
+  branches:
+    include:
+    - main
+    - feature/private-deployment
+  paths:
+    include:
+    - "00 - Resource Deployment"
+
+variables:
+- group: Platform-POC
+
+stages:
+
+- stage: 'PreparePlatform'
+  displayName: 'Deploy Cognitive Search Indexes'
+  jobs:
+  - job: 'DeployIndexes'
+    pool:
+      vmImage: 'ubuntu-latest'  
+    steps:
+    - task: AzurePowerShell@5
+      name: 'DeployIndex'
+      displayName: 'Deploy Index / Indexer to Cognitive Search Service'
+      inputs:
+        azureSubscription: 'PlatformServiceConnection'
+        scriptType: 'filePath'
+        scriptPath: './05 - Pipelines/Deploy-SearchIndex.ps1'
+        workingDirectory: './platform'
+        azurePowerShellVersion: latestVersion
+        scriptArguments: 
+          -ResourcePrefix 'kmpgrf' `
+          -RootDirectory '.\'
