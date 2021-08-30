@@ -42,7 +42,7 @@
     "configuration": {
       "dataToExtract": "contentAndMetadata",
       "imageAction": "generateNormalizedImages",
-      "executionEnvironment" : "Public"
+      "executionEnvironment" : "{{execution_environment}}"
     }
   }
 }
