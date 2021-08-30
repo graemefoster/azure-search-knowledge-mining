@@ -1,5 +1,5 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
         "resourcePrefix": {
@@ -23,20 +23,9 @@
         },
         "hostingPlanSku": {
             "type": "string",
-            "defaultValue": "F1",
+            "defaultValue": "P1V3",
             "allowedValues": [
-                "F1",
-                "D1",
-                "B1",
-                "B2",
-                "B3",
-                "S1",
-                "S2",
-                "S3",
-                "P1",
-                "P2",
-                "P3",
-                "P4"
+                "P1v3"
             ],
             "metadata": {
                 "description": "The pricing tier for the App Service plan"
@@ -85,21 +74,43 @@
             "metadata": {
                 "description": "Location where the Azure Search service and Cognitive Services account will be deployed."
             }
+        },
+        "vnetId": {
+            "type": "string",
+            "metadata": {
+                "description": "Resource Id of the VNet to deploy into."
+            }
+        },
+        "plinkSubnetId": {
+            "type": "string",
+            "metadata": {
+                "description": "Resource Id of the private link subnet to deploy into."
+            }
+        },
+        "vnetIntregrationSubnetId": {
+            "type": "string",
+            "metadata": {
+                "description": "Resource Id of the subnet the app-service-plan should send its traffic out by."
+            }
         }
     },
     "variables": {
         "hostingPlanName": "[concat(parameters('resourcePrefix'), '-plan')]",
         "storageAccountName": "[concat(parameters('resourcePrefix'), 'str')]",
         "websiteName": "[concat(parameters('resourcePrefix'), '-site')]",
+        "websitePrivateEndpointName": "[concat(parameters('resourcePrefix'), '-site-private-endpoint')]",
+        "storagePrivateEndpointName": "[concat(parameters('resourcePrefix'), '-storage-private-endpoint')]",
+        "searchPrivateEndpointName": "[concat(parameters('resourcePrefix'), '-search-private-endpoint')]",
         "appInsightsName": "[concat(parameters('resourcePrefix'), '-app-insights')]",
         "searchServiceName": "[concat(parameters('resourcePrefix'), '-search-service')]",
         "cognitiveServicesAccountName": "[concat(parameters('resourcePrefix'), '-cognitive-services')]",
-        "functionAppName":"[concat(parameters('resourcePrefix'), '-function-app')]",
-        "storageAccountId":"[concat(parameters('resourcePrefix'))]"
+        "websitePrivateDnsZoneName": "privatelink.azurewebsites.net",
+        "storagePrivateDnsZoneName": "[concat(variables('storageAccountName'), '.blob.core.windows.net')]",
+        "searchPrivateDnsZoneName": "[concat(variables('searchServiceName'), '.search.windows.net')]"
     },
     "resources": [
         {
-            "apiVersion": "2016-09-01",
+            "apiVersion": "2020-06-01",
             "name": "[variables('hostingPlanName')]",
             "type": "Microsoft.Web/serverfarms",
             "location": "[parameters('location')]",
@@ -122,7 +133,55 @@
             }
         },
         {
-            "apiVersion": "2016-08-01",
+            "type": "Microsoft.Network/privateEndpoints",
+            "apiVersion": "2019-04-01",
+            "name": "[variables('storagePrivateEndpointName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ],
+            "properties": {
+                "subnet": {
+                    "id": "[parameters('plinkSubnetId')]"
+                },
+                "privateLinkServiceConnections": [
+                    {
+                        "name": "[concat('privatelinkconnection', variables('storageAccountName'))]",
+                        "properties": {
+                            "privateLinkServiceId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+                            "groupIds": [
+                                "blob"
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateDnsZones",
+            "apiVersion": "2018-09-01",
+            "name": "[variables('storagePrivateDnsZoneName')]",
+            "location": "global",
+            "tags": {},
+            "properties": {}
+        },
+        {
+            "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+            "apiVersion": "2018-09-01",
+            "name": "[concat(variables('storagePrivateDnsZoneName'), '/knowledge-mining-portal-vnet-link')]",
+            "location": "global",
+            "dependsOn": [
+                "[variables('storagePrivateDnsZoneName')]"
+            ],
+            "properties": {
+                "virtualNetwork": {
+                    "id": "[parameters('vnetId')]"
+                },
+                "registrationEnabled": false
+            }
+        },
+        {
+            "apiVersion": "2020-12-01",
             "name": "[variables('websiteName')]",
             "type": "Microsoft.Web/sites",
             "location": "[parameters('location')]",
@@ -131,6 +190,109 @@
             ],
             "properties": {
                 "serverFarmId": "[variables('hostingPlanName')]"
+            },
+            "resources": [
+                {
+                    "type": "networkConfig",
+                    "apiVersion": "2019-08-01",
+                    "name": "virtualNetwork",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites', variables('websiteName'))]"
+                    ],
+                    "properties": {
+                        "subnetResourceId": "[parameters('vnetIntregrationSubnetId')]",
+                        "isSwift": true
+                    }
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints",
+            "apiVersion": "2019-04-01",
+            "name": "[variables('websitePrivateEndpointName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('websiteName'))]"
+            ],
+            "properties": {
+                "subnet": {
+                    "id": "[parameters('plinkSubnetId')]"
+                },
+                "privateLinkServiceConnections": [
+                    {
+                        "name": "[concat('privatelinkconnection', variables('websiteName'))]",
+                        "properties": {
+                            "privateLinkServiceId": "[resourceId('Microsoft.Web/sites', variables('websiteName'))]",
+                            "groupIds": [
+                                "sites"
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateDnsZones",
+            "apiVersion": "2020-01-01",
+            "name": "[variables('websitePrivateDnsZoneName')]",
+            "location": "global",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('websiteName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+            "apiVersion": "2020-01-01",
+            "name": "[concat(variables('websitePrivateDnsZoneName'), '/knowledge-mining-portal-vnet-link')]",
+            "location": "global",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', variables('websitePrivateDnsZoneName'))]"
+            ],
+            "properties": {
+                "virtualNetwork": {
+                    "id": "[parameters('vnetId')]"
+                },
+                "registrationEnabled": false
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+            "apiVersion": "2020-03-01",
+            "name": "[concat(variables('websitePrivateEndpointName'),'/dnsgroupname')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', variables('websitePrivateDnsZoneName'))]",
+                "[resourceId('Microsoft.Network/privateEndpoints', variables('websitePrivateEndpointName'))]"
+            ],
+            "properties": {
+                "privateDnsZoneConfigs": [
+                    {
+                        "name": "dnsConfig",
+                        "properties": {
+                            "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', variables('websitePrivateDnsZoneName'))]"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+            "apiVersion": "2020-03-01",
+            "name": "[concat(variables('storagePrivateEndpointName'),'/dnsgroupname')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', variables('storagePrivateDnsZoneName'))]",
+                "[resourceId('Microsoft.Network/privateEndpoints', variables('storagePrivateEndpointName'))]"
+            ],
+            "properties": {
+                "privateDnsZoneConfigs": [
+                    {
+                        "name": "dnsConfig",
+                        "properties": {
+                            "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', variables('storagePrivateDnsZoneName'))]"
+                        }
+                    }
+                ]
             }
         },
         {
@@ -148,12 +310,71 @@
             }
         },
         {
-            "apiVersion": "2015-08-19",
+            "apiVersion": "2021-04-01-preview",
             "name": "[variables('searchServiceName')]",
             "type": "Microsoft.Search/searchServices",
             "location": "[parameters('location')]",
             "sku": {
                 "name": "[parameters('searchServiceSku')]"
+            },
+            "properties": {
+                "publicNetworkAccess": "disabled",
+                "networkRuleSet": {
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints",
+            "apiVersion": "2019-04-01",
+            "name": "[variables('searchPrivateEndpointName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Search/searchServices', variables('searchServiceName'))]"
+            ],
+            "properties": {
+                "subnet": {
+                    "id": "[parameters('plinkSubnetId')]"
+                },
+                "privateLinkServiceConnections": [
+                    {
+                        "name": "[concat('privatelinkconnection', variables('searchServiceName'))]",
+                        "properties": {
+                            "privateLinkServiceId": "[resourceId('Microsoft.Search/searchServices', variables('searchServiceName'))]",
+                            "groupIds": [
+                                "searchService"
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateDnsZones",
+            "apiVersion": "2020-01-01",
+            "name": "[variables('searchPrivateDnsZoneName')]",
+            "location": "global",
+            "dependsOn": [
+                "[resourceId('Microsoft.Search/searchServices', variables('searchServiceName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+            "apiVersion": "2020-03-01",
+            "name": "[concat(variables('searchPrivateEndpointName'),'/dnsgroupname')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', variables('searchPrivateDnsZoneName'))]",
+                "[resourceId('Microsoft.Network/privateEndpoints', variables('searchPrivateEndpointName'))]"
+            ],
+            "properties": {
+                "privateDnsZoneConfigs": [
+                    {
+                        "name": "dnsConfig",
+                        "properties": {
+                            "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', variables('searchPrivateDnsZoneName'))]"
+                        }
+                    }
+                ]
             }
         },
         {
@@ -165,64 +386,7 @@
             },
             "kind": "CognitiveServices",
             "location": "[toLower(replace(parameters('location'),' ', ''))]",
-            "properties": {}
-        },
-        {
-            "apiVersion": "2016-03-01",
-            "type": "Microsoft.Web/sites",
-            "name": "[variables('functionAppName')]",
-            "location": "[parameters('location')]",
-            "kind": "functionapp",
-            "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
-                "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
-            ],
             "properties": {
-                "siteConfig": {
-                    "appSettings": [
-                        {
-                            "name": "AzureWebJobsStorage",
-                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2015-05-01-preview').key1, ';')]"
-                        },
-                        {
-                            "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
-                            "value": "[reference(resourceId('microsoft.insights/components/', variables('appInsightsName')), '2015-05-01').InstrumentationKey]"
-                        },
-                        {
-                            "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
-                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageAccountName'),';AccountKey=',listkeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2015-05-01-preview').key1, ';')]"
-                        },
-                      {
-                        "name": "WEBSITE_CONTENTSHARE",
-                        "value": "[toLower(variables('functionAppName'))]"
-                      },
-                        {
-                            "name": "FUNCTIONS_WORKER_RUNTIME",
-                            "value": "node"
-                        },
-                        {
-                            "name": "WEBSITE_NODE_DEFAULT_VERSION",
-                            "value": "10.14.1"
-                        },
-                        {
-                            "name": "FUNCTIONS_EXTENSION_VERSION",
-                            "value": "~2"
-                        }
-                    ]
-                }
-            }
-        },
-        { 
-            "apiVersion": "2018-02-01",
-            "name": "pid-205d0e47-324f-5b9e-8dde-f9fc4a92c091",
-            "type": "Microsoft.Resources/deployments",
-            "properties": {
-                "mode": "Incremental",
-                "template": {
-                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-                    "contentVersion": "1.0.0.0",
-                    "resources": []
-                }
             }
         }
     ]
