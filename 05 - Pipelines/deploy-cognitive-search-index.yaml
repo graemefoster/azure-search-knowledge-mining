@@ -30,7 +30,6 @@ stages:
         azureSubscription: 'PlatformServiceConnection'
         scriptType: 'filePath'
         scriptPath: './05 - Pipelines/Deploy-SearchIndex.ps1'
-        workingDirectory: './platform'
         azurePowerShellVersion: latestVersion
         scriptArguments: 
           -ResourcePrefix '$(ResourcePrefix)' `
