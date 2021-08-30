@@ -30,7 +30,7 @@ function CreateSearchIndex
             'Content-Type' = 'application/json' 
             'Accept' = 'application/json' 
         }
-        $baseSearchUrl = "https://"+$searchServiceName+".privatelink.search.windows.net"
+        $baseSearchUrl = "https://"+$searchServiceName+".search.windows.net"
         $fullUrl = $baseSearchUrl + $url
 
         Write-Host "Calling api: '"$fullUrl"'";
