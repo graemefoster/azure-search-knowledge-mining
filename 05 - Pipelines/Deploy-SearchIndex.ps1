@@ -1,5 +1,12 @@
+param(
+    [Parameter(Mandatory)] $ResourcePrefix, 
+    [Parameter(Mandatory)] $RootDirectory, 
+    [Parameter(Mandatory)] $CognitiveServicesKey, 
+    [Parameter(Mandatory)] $StorageConnectionString, 
+    [Parameter(Mandatory)] $SearchServiceKey
+)
+
 $searchServiceName = $ResourcePrefix + "search-service";
-$storageAccountName = $ResourcePrefix + "str";
 $storageContainerName = "documents";
 
 $dataSourceName = $ResourcePrefix + "-datasource";
