@@ -106,7 +106,9 @@
         "cognitiveServicesAccountName": "[concat(parameters('resourcePrefix'), '-cognitive-services')]",
         "websitePrivateDnsZoneName": "privatelink.azurewebsites.net",
         "storagePrivateDnsZoneName": "privatelink.blob.core.windows.net",
-        "searchPrivateDnsZoneName": "privatelink.search.windows.net"
+        "searchPrivateDnsZoneName": "privatelink.search.windows.net",
+        "storageBlobDataReader": "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1",
+        "storageBlobDataContributor": "ba92f5b4-2d11-453d-a403-e96b0029c9fe"
     },
     "resources": [
         {
@@ -136,6 +138,7 @@
             ],
             "properties": {
                 "allowBlobPublicAccess": false,
+                "allowSharedKeyAccess": false,
                 "networkAcls": {
                     "defaultAction": "Allow",
                     "bypass": "Logging,Metrics",
@@ -210,6 +213,9 @@
             "dependsOn": [
                 "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]"
             ],
+            "identity": {
+                "type": "SystemAssigned"
+            },
             "properties": {
                 "serverFarmId": "[variables('hostingPlanName')]"
             },
@@ -369,6 +375,36 @@
                         }
                     }
                 ]
+            }
+        },
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2021-04-01-preview",
+            "name": "[guid(concat(variables('searchServiceName'), '-read-', variables('storageAccountName')))]",
+            "scope": "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Search/searchServices', variables('searchServiceName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ],
+            "properties": {
+                "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', variables('storageBlobDataReader'))]",
+                "principalId": "[reference(resourceId('Microsoft.Search/searchServices', variables('searchServiceName')), '2021-04-01-preview', 'Full').identity.principalId]",
+                "principalType": "ServicePrincipal"
+            }
+        },
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2021-04-01-preview",
+            "name": "[guid(concat(variables('websiteName'), '-contributor-', variables('storageAccountName')))]",
+            "scope": "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('websiteName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ],
+            "properties": {
+                "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', variables('storageBlobDataContributor'))]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('websiteName')), '2020-12-01', 'Full').identity.principalId]",
+                "principalType": "ServicePrincipal"
             }
         },
         {
