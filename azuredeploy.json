@@ -131,11 +131,23 @@
                 "name": "[parameters('storageAccountType')]",
                 "tier": "Standard"
             },
+            "identity" : {
+                "type" : "SystemAssigned"
+            },
+            "dependsOn" : [
+                "[variables('searchServiceName')]"
+            ],
             "properties" : {
                 "allowBlobPublicAccess" : false,
                 "networkAcls" : {
                     "defaultAction" : "Deny",
-                    "bypass" : "Logging,Metrics"
+                    "bypass" : "Logging,Metrics",
+                    "resourceAccessRules": [
+                        {
+                            "resourceId" : "[resourceId('Microsoft.Search/searchServices', variables('searchServiceName'))]",
+                            "tenantId" : "[subscription().tenantId]"
+                        }
+                    ]
                 }
             },
             "resources" : [
@@ -336,23 +348,7 @@
             },
             "properties": {
                 "publicNetworkAccess": "disabled"
-            },
-            "resources": [
-                {
-                    "name": "indexer-blob-access",
-                    "type": "sharedPrivateLinkResources",
-                    "dependsOn": [
-                        "[variables('searchServiceName')]",
-                        "[resourceId('Microsoft.Network/privateEndpoints', variables('storagePrivateEndpointName'))]"
-                    ],
-                    "apiVersion": "2020-08-01",
-                    "properties": {
-                        "privateLinkResourceId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
-                        "groupId": "blob",
-                        "requestMessage": "Access to blob storage from search indexer"
-                    }
-                }
-            ]
+            }
         },
         {
             "type": "Microsoft.Network/privateEndpoints",
