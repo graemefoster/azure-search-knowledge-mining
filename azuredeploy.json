@@ -131,31 +131,24 @@
                 "name": "[parameters('storageAccountType')]",
                 "tier": "Standard"
             },
-            "identity" : {
-                "type" : "SystemAssigned"
-            },
-            "dependsOn" : [
+            "dependsOn": [
                 "[variables('searchServiceName')]"
             ],
-            "properties" : {
-                "allowBlobPublicAccess" : false,
-                "networkAcls" : {
-                    "defaultAction" : "Deny",
-                    "bypass" : "Logging,Metrics",
+            "properties": {
+                "allowBlobPublicAccess": false,
+                "networkAcls": {
+                    "defaultAction": "Allow",
+                    "bypass": "Logging,Metrics",
                     "resourceAccessRules": [
-                        {
-                            "resourceId" : "[resourceId('Microsoft.Search/searchServices', variables('searchServiceName'))]",
-                            "tenantId" : "[subscription().tenantId]"
-                        }
                     ]
                 }
             },
-            "resources" : [
+            "resources": [
                 {
-                    "type" : "blobServices/containers",
-                    "apiVersion" : "2021-04-01",
-                    "name" : "default/documents",
-                    "dependsOn" : [
+                    "type": "blobServices/containers",
+                    "apiVersion": "2021-04-01",
+                    "name": "default/documents",
+                    "dependsOn": [
                         "[variables('storageAccountName')]"
                     ]
                 }
@@ -346,8 +339,11 @@
             "sku": {
                 "name": "[parameters('searchServiceSku')]"
             },
+            "identity": {
+                "type": "SystemAssigned"
+            },
             "properties": {
-                "publicNetworkAccess": "disabled"
+                "publicNetworkAccess": "enabled"
             }
         },
         {

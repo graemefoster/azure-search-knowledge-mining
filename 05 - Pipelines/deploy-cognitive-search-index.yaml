@@ -35,6 +35,6 @@ stages:
           -ResourcePrefix '$(ResourcePrefix)' `
           -CognitiveServicesKey '$(CognitiveServicesKey)' `
           -RootDirectory './00 - Resource Deployment/' `
-          -StorageConnectionString '$(StorageConnectionString)' `
+          -StorageResourceId '$(StorageResourceId)' `
           -SearchServiceKey '$(SearchServiceKey)'
 

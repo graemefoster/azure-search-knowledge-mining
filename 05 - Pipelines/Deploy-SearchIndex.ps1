@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory)] $ResourcePrefix, 
     [Parameter(Mandatory)] $RootDirectory, 
     [Parameter(Mandatory)] $CognitiveServicesKey, 
-    [Parameter(Mandatory)] $StorageConnectionString, 
+    [Parameter(Mandatory)] $StorageResourceId, 
     [Parameter(Mandatory)] $SearchServiceKey
 )
 
@@ -39,7 +39,7 @@ function CreateSearchIndex
 
     # Create the datasource
     $dataSourceBody = Get-Content -Path "$RootDirectory\templates\base-datasource.json"
-    $dataSourceBody = $dataSourceBody -replace "{{env_storage_connection_string}}", $StorageConnectionString      
+    $dataSourceBody = $dataSourceBody -replace "{{env_storage_connection_string}}", "ResourceId=$StorageResourceId"      
     $dataSourceBody = $dataSourceBody -replace "{{env_storage_container}}", $storageContainerName        
     CallSearchAPI -url ("/datasources/"+$dataSourceName+"?api-version=2019-05-06") -body $dataSourceBody
 
