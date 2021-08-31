@@ -247,7 +247,7 @@ function Deploy
         $indexerBody = $indexerBody -replace "{{datasource_name}}", $dataSourceName
         $indexerBody = $indexerBody -replace "{{skillset_name}}", $skillsetName   
         $indexerBody = $indexerBody -replace "{{index_name}}", $indexName
-        $indexerBody = $indexerBody -replace "{{execution_environment}}", 'Public'   
+        $indexerBody = $indexerBody -replace "{{execution_environment}}", 'standard'   
         CallSearchAPI -url ("/indexers/"+$indexerName+"?api-version=2019-05-06") -body $indexerBody
 	}
 
