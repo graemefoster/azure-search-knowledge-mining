@@ -1,0 +1,57 @@
+name: "Platform"
+
+pool:
+  name: Default
+
+trigger:
+  branches:
+    include:
+      - main
+      - feature/private-deployment
+  paths:
+    include:
+      - "02 - Web UI Template"
+      - "05 - Pipelines"
+
+variables:
+  - group: KnowledgeMiningPortal
+
+stages:
+  - stage: "BuildWebsite"
+    displayName: "Build portal deployment"
+    jobs:
+      - job: "Build"
+        steps:
+          - task: DotNetCoreCLI@2
+            displayName: "Restore Portal App project dependencies"
+            inputs:
+              command: "restore"
+              projects: "./02 - Web UI Template/CognitiveSearch.UI/CognitiveSearch.UI.csproj"
+
+          - task: DotNetCoreCLI@2
+            displayName: "Build the Sample App project - release"
+            inputs:
+              command: "build"
+              arguments: "--no-restore --configuration release"
+              projects: "./02 - Web UI Template/CognitiveSearch.UI/CognitiveSearch.UI.csproj"
+
+          - publish: $(Build.ArtifactStagingDirectory)/release/CognitiveSearch.UI.zip
+            artifact: CognitiveSearchPortal
+
+  - stage: "DeployWebApp"
+    dependsOn:
+      - BuildWebsite
+    displayName: "Deploy Website"
+    jobs:
+      - deployment: "DeployWebsite"
+        environment: "Dev"
+        displayName: "Deploy website to Development"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureWebApp@1
+                  inputs:
+                    azureSubscription: PlatformServiceConnection
+                    appName: $(SiteName)
+                    package: $(Pipeline.Workspace)/CognitiveSearchPortal/CognitiveSearch.UI.zip

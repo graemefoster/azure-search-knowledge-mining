@@ -141,10 +141,9 @@
                 "allowSharedKeyAccess": false,
                 "networkAcls": {
                     "defaultAction": "Allow",
-                    "bypass": "Logging,Metrics",
-                    "resourceAccessRules": [
-                    ]
-                }
+                    "bypass": "Logging, Metrics"
+                },
+                "supportsHttpsTrafficOnly": true
             },
             "resources": [
                 {
