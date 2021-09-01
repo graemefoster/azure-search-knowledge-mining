@@ -462,7 +462,7 @@ namespace CognitiveSearch.UI
             }
 
             //check for MSI:
-            if (accountKey == null)
+            if (string.IsNullOrWhiteSpace(accountKey))
             {
                 for (int i = 0; i < s_containerAddressesLength; i++)
                 {
