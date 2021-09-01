@@ -51,7 +51,8 @@ namespace CognitiveSearch.UI
         private static string[] s_tokens = null;
 
         // this should match the default value used in appsettings.json.  
-        private static string defaultContainerUriValue = "https://{storage-account-name}.blob.core.windows.net/{container-name}";
+        private static string defaultContainerUriValue =
+            "https://{storage-account-name}.blob.core.windows.net/{container-name}";
 
 
         public DocumentSearchClient(IConfiguration configuration)
@@ -71,14 +72,14 @@ namespace CognitiveSearch.UI
                 clientOptions.AddPolicy(new SearchIdPipelinePolicy(), HttpPipelinePosition.PerCall);
 
                 // Create an HTTP reference to the catalog index
-                _searchIndexClient = new SearchIndexClient(new Uri($"https://{searchServiceName}.search.windows.net/"), new AzureKeyCredential(apiKey), options: clientOptions);
+                _searchIndexClient = new SearchIndexClient(new Uri($"https://{searchServiceName}.search.windows.net/"),
+                    new AzureKeyCredential(apiKey), options: clientOptions);
                 _searchClient = _searchIndexClient.GetSearchClient(IndexName);
 
                 Schema = new SearchSchema().AddFields(_searchIndexClient.GetIndex(IndexName).Value.Fields);
                 Model = new SearchModel(Schema);
 
                 _isPathBase64Encoded = (configuration.GetSection("IsPathBase64Encoded")?.Value == "True");
-
             }
             catch (Exception e)
             {
@@ -88,7 +89,8 @@ namespace CognitiveSearch.UI
             }
         }
 
-        public SearchResults<SearchDocument> Search(string searchText, SearchFacet[] searchFacets = null, string[] selectFilter = null, int currentPage = 1, string polygonString = null)
+        public SearchResults<SearchDocument> Search(string searchText, SearchFacet[] searchFacets = null,
+            string[] selectFilter = null, int currentPage = 1, string polygonString = null)
         {
             try
             {
@@ -100,7 +102,8 @@ namespace CognitiveSearch.UI
                 //    SearchId = s.Result;
                 //}
 
-                Response<SearchResults<SearchDocument>> response = _searchClient.Search<SearchDocument>(searchText, options);
+                Response<SearchResults<SearchDocument>> response =
+                    _searchClient.Search<SearchDocument>(searchText, options);
 
                 // logging the search id for app insights
                 if (!string.IsNullOrEmpty(telemetryClient.InstrumentationKey))
@@ -121,10 +124,12 @@ namespace CognitiveSearch.UI
             {
                 Console.WriteLine("Error querying index: {0}\r\n", ex.Message.ToString());
             }
+
             return null;
         }
 
-        public SearchOptions GenerateSearchOptions(SearchFacet[] searchFacets = null, string[] selectFilter = null, int currentPage = 1, string polygonString = null)
+        public SearchOptions GenerateSearchOptions(SearchFacet[] searchFacets = null, string[] selectFilter = null,
+            int currentPage = 1, string polygonString = null)
         {
             SearchOptions options = new SearchOptions()
             {
@@ -195,14 +200,14 @@ namespace CognitiveSearch.UI
             if (polygonString != null && polygonString.Length > 0)
             {
                 string geoQuery = "geo.intersects(geoLocation, geography'POLYGON((" + polygonString + "))')";
-                
+
                 if (options.Filter != null && options.Filter.Length > 0)
-                { 
-                    options.Filter += " and " + geoQuery; 
+                {
+                    options.Filter += " and " + geoQuery;
                 }
                 else
-                { 
-                    options.Filter = geoQuery; 
+                {
+                    options.Filter = geoQuery;
                 }
             }
 
@@ -226,6 +231,7 @@ namespace CognitiveSearch.UI
             {
                 Console.WriteLine("Error querying index: {0}\r\n", ex.Message.ToString());
             }
+
             return null;
         }
 
@@ -247,6 +253,7 @@ namespace CognitiveSearch.UI
             {
                 Console.WriteLine("Error querying index: {0}\r\n", ex.Message.ToString());
             }
+
             return null;
         }
 
@@ -262,6 +269,7 @@ namespace CognitiveSearch.UI
             {
                 Console.WriteLine("Error querying index: {0}\r\n", ex.Message.ToString());
             }
+
             return null;
         }
 
@@ -276,12 +284,17 @@ namespace CognitiveSearch.UI
             {
                 searchId = headerValues.FirstOrDefault();
             }
+
             return searchId;
         }
 
         public string GetSearchId()
         {
-            if (SearchId != null) { return SearchId; }
+            if (SearchId != null)
+            {
+                return SearchId;
+            }
+
             return string.Empty;
         }
 
@@ -289,9 +302,9 @@ namespace CognitiveSearch.UI
         {
             var facets = new List<String>();
 
-            foreach (var facet in facetNames) 
+            foreach (var facet in facetNames)
             {
-                 facets.Add($"{facet}, count:{maxCount}");
+                facets.Add($"{facet}, count:{maxCount}");
             }
 
             // Execute search based on query string
@@ -308,17 +321,19 @@ namespace CognitiveSearch.UI
                 {
                     options.Facets.Add(s);
                 }
-                
+
                 return _searchIndexClient.GetSearchClient(IndexName).Search<SearchDocument>(searchText, options);
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Error querying index: {0}\r\n", ex.Message.ToString());
             }
+
             return null;
         }
 
-        public DocumentResult GetDocuments(string q, SearchFacet[] searchFacets, int currentPage, string polygonString = null)
+        public DocumentResult GetDocuments(string q, SearchFacet[] searchFacets, int currentPage,
+            string polygonString = null)
         {
             GetContainerSasUris();
 
@@ -383,7 +398,9 @@ namespace CognitiveSearch.UI
         /// </summary>
         public async Task RunIndexer()
         {
-            SearchIndexerClient _searchIndexerClient = new SearchIndexerClient(new Uri($"https://{searchServiceName}.search.windows.net/"), new AzureKeyCredential(apiKey));
+            SearchIndexerClient _searchIndexerClient =
+                new SearchIndexerClient(new Uri($"https://{searchServiceName}.search.windows.net/"),
+                    new AzureKeyCredential(apiKey));
             var indexStatus = await _searchIndexerClient.GetIndexerStatusAsync(IndexerName);
             if (indexStatus.Value.LastResult.Status != IndexerExecutionStatus.InProgress)
             {
@@ -398,9 +415,21 @@ namespace CognitiveSearch.UI
 
             // Determine which token to use.
             string tokenToUse;
-            if (decodedPath.ToLower().Contains(s_containerAddresses[1])) { tokenToUse = s_tokens[1]; storageIndex = 1; }
-            else if (decodedPath.ToLower().Contains(s_containerAddresses[2])) { tokenToUse = s_tokens[2]; storageIndex = 2; }
-            else { tokenToUse = s_tokens[0]; storageIndex = 0; }
+            if (decodedPath.ToLower().Contains(s_containerAddresses[1]))
+            {
+                tokenToUse = s_tokens[1];
+                storageIndex = 1;
+            }
+            else if (decodedPath.ToLower().Contains(s_containerAddresses[2]))
+            {
+                tokenToUse = s_tokens[2];
+                storageIndex = 2;
+            }
+            else
+            {
+                tokenToUse = s_tokens[0];
+                storageIndex = 0;
+            }
 
             return tokenToUse;
         }
@@ -417,7 +446,7 @@ namespace CognitiveSearch.UI
 
             string accountName = _configuration.GetSection("StorageAccountName")?.Value;
             string accountKey = _configuration.GetSection("StorageAccountKey")?.Value;
-            StorageSharedKeyCredential storageSharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+
             s_containerAddresses[0] = _configuration.GetSection("StorageContainerAddress")?.Value.ToLower();
             s_containerAddresses[1] = _configuration.GetSection("StorageContainerAddress2")?.Value.ToLower();
             s_containerAddresses[2] = _configuration.GetSection("StorageContainerAddress3")?.Value.ToLower();
@@ -426,27 +455,44 @@ namespace CognitiveSearch.UI
             {
                 s_containerAddressesLength--;
             }
+
             if (String.Equals(s_containerAddresses[2], defaultContainerUriValue))
             {
                 s_containerAddressesLength--;
             }
-            for (int i = 0; i < s_containerAddressesLength; i++) {
-                BlobContainerClient container = new BlobContainerClient(new Uri(s_containerAddresses[i]), new StorageSharedKeyCredential(accountName, accountKey));
-                var policy = new BlobSasBuilder
-                {
-                    Protocol = SasProtocol.HttpsAndHttp,
-                    BlobContainerName = container.Name,
-                    Resource = "c",
-                    StartsOn = DateTimeOffset.UtcNow,
-                    ExpiresOn = DateTimeOffset.UtcNow.AddHours(24),
-                    IPRange = new SasIPRange(IPAddress.None, IPAddress.None)
-                };
-                policy.SetPermissions(BlobSasPermissions.Read);
-                var sas = policy.ToSasQueryParameters(storageSharedKeyCredential);
-                BlobUriBuilder  sasUri = new BlobUriBuilder(container.Uri);
-                sasUri.Sas = sas;
 
-                s_tokens[i] = "?" + sasUri.Sas.ToString();
+            //check for MSI:
+            if (accountKey == null)
+            {
+                for (int i = 0; i < s_containerAddressesLength; i++)
+                {
+                    s_tokens[i] = "";
+                }
+            }
+            else
+            {
+                StorageSharedKeyCredential storageSharedKeyCredential =
+                    new StorageSharedKeyCredential(accountName, accountKey);
+                for (int i = 0; i < s_containerAddressesLength; i++)
+                {
+                    BlobContainerClient container = new BlobContainerClient(new Uri(s_containerAddresses[i]),
+                        new StorageSharedKeyCredential(accountName, accountKey));
+                    var policy = new BlobSasBuilder
+                    {
+                        Protocol = SasProtocol.HttpsAndHttp,
+                        BlobContainerName = container.Name,
+                        Resource = "c",
+                        StartsOn = DateTimeOffset.UtcNow,
+                        ExpiresOn = DateTimeOffset.UtcNow.AddHours(24),
+                        IPRange = new SasIPRange(IPAddress.None, IPAddress.None)
+                    };
+                    policy.SetPermissions(BlobSasPermissions.Read);
+                    var sas = policy.ToSasQueryParameters(storageSharedKeyCredential);
+                    BlobUriBuilder sasUri = new BlobUriBuilder(container.Uri);
+                    sasUri.Sas = sas;
+
+                    s_tokens[i] = "?" + sasUri.Sas.ToString();
+                }
             }
         }
 
@@ -538,7 +584,6 @@ namespace CognitiveSearch.UI
                 {
                     if (element.Values.ToString().Length >= 4)
                     {
-                       
                         cleanValues.Add(new FacetValue() { value = element.Value.ToString(), count = element.Count });
                     }
                 }
@@ -548,12 +593,13 @@ namespace CognitiveSearch.UI
             else
             {
                 List<FacetValue> outputFacets = facetResult.Value
-                           .Select(x => new FacetValue() { value = x.Value.ToString(), count = x.Count })
-                           .ToList();
+                    .Select(x => new FacetValue() { value = x.Value.ToString(), count = x.Count })
+                    .ToList();
                 return outputFacets;
             }
         }
     }
+
     public class SearchIdPipelinePolicy : HttpPipelineSynchronousPolicy
     {
         public override void OnSendingRequest(HttpMessage message)
