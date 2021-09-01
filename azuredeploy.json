@@ -92,26 +92,126 @@
             "metadata": {
                 "description": "Resource Id of the subnet the app-service-plan should send its traffic out by."
             }
+        },
+        "aadApplicationId": {
+            "type": "string",
+            "metadata": {
+                "description": "Application Id (ClientId of AAD app representing the site)."
+            }
         }
     },
     "variables": {
         "hostingPlanName": "[concat(parameters('resourcePrefix'), '-plan')]",
         "storageAccountName": "[concat(parameters('resourcePrefix'), 'str')]",
         "containerName": "documents",
+        "keyvaultName": "[concat(parameters('resourcePrefix'), '-kv')]",
         "websiteName": "[concat(parameters('resourcePrefix'), '-site')]",
         "websitePrivateEndpointName": "[concat(parameters('resourcePrefix'), '-site-private-endpoint')]",
         "storagePrivateEndpointName": "[concat(parameters('resourcePrefix'), '-storage-private-endpoint')]",
         "searchPrivateEndpointName": "[concat(parameters('resourcePrefix'), '-search-private-endpoint')]",
+        "keyvaultPrivateEndpointName": "[concat(parameters('resourcePrefix'), '-kv-private-endpoint')]",
         "appInsightsName": "[concat(parameters('resourcePrefix'), '-app-insights')]",
         "searchServiceName": "[concat(parameters('resourcePrefix'), '-search-service')]",
         "cognitiveServicesAccountName": "[concat(parameters('resourcePrefix'), '-cognitive-services')]",
         "websitePrivateDnsZoneName": "privatelink.azurewebsites.net",
         "storagePrivateDnsZoneName": "privatelink.blob.core.windows.net",
         "searchPrivateDnsZoneName": "privatelink.search.windows.net",
+        "keyvaultPrivateDnsZoneName": "privatelink.vaultcore.azure.net",
         "storageBlobDataReader": "2a2b9908-6ea1-4ae2-8e65-a410df84e7d1",
-        "storageBlobDataContributor": "ba92f5b4-2d11-453d-a403-e96b0029c9fe"
+        "storageBlobDataContributor": "ba92f5b4-2d11-453d-a403-e96b0029c9fe",
+        "keyvaultSecretsUser": "4633458b-17de-408a-b874-0445c86b69e6"
     },
     "resources": [
+        {
+            "name": "[variables('keyvaultName')]",
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2019-09-01",
+            "location": "[resourceGroup().location]",
+            "tags": {},
+            "properties": {
+                "tenantId": "[subscription().tenantId]",
+                "sku": {
+                    "name": "standard",
+                    "family": "A"
+                },
+                "enableSoftDelete": true,
+                "softDeleteRetentionInDays": 7,
+                "enableRbacAuthorization": true,
+                "networkAcls": {
+                    "defaultAction": "Deny",
+                    "bypass": "None"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateDnsZones",
+            "apiVersion": "2020-01-01",
+            "name": "[variables('keyvaultPrivateDnsZoneName')]",
+            "location": "global",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyvaultName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+            "apiVersion": "2020-01-01",
+            "name": "[concat(variables('keyvaultPrivateDnsZoneName'), '/knowledge-mining-portal-vnet-link')]",
+            "location": "global",
+            "dependsOn": [
+                "[variables('keyvaultPrivateDnsZoneName')]"
+            ],
+            "properties": {
+                "registrationEnabled": false,
+                "virtualNetwork": {
+                    "id": "[parameters('vnetId')]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints",
+            "apiVersion": "2020-04-01",
+            "name": "[variables('keyvaultPrivateEndpointName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyvaultName'))]"
+            ],
+            "properties": {
+                "subnet": {
+                    "id": "[parameters('plinkSubnetId')]"
+                },
+                "privateLinkServiceConnections": [
+                    {
+                        "name": "[variables('keyvaultPrivateEndpointName')]",
+                        "properties": {
+                            "privateLinkServiceId": "[resourceId('Microsoft.KeyVault/vaults', variables('keyvaultName'))]",
+                            "groupIds": [
+                                "vault"
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+            "apiVersion": "2020-03-01",
+            "name": "[concat(variables('keyvaultPrivateEndpointName'),'/dnsgroupname')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[variables('keyvaultPrivateDnsZoneName')]",
+                "[variables('keyvaultPrivateEndpointName')]"
+            ],
+            "properties": {
+                "privateDnsZoneConfigs": [
+                    {
+                        "name": "dnsConfig",
+                        "properties": {
+                            "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', variables('keyvaultPrivateDnsZoneName'))]"
+                        }
+                    }
+                ]
+            }
+        },
         {
             "apiVersion": "2020-06-01",
             "name": "[variables('hostingPlanName')]",
@@ -233,7 +333,7 @@
                     ],
                     "properties": {
                         "subnetResourceId": "[parameters('vnetIntregrationSubnetId')]",
-                        "isSwift": true,
+                        "isSwift": true
                     }
                 }
             ]
@@ -412,6 +512,21 @@
             }
         },
         {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2021-04-01-preview",
+            "name": "[guid(concat(variables('websiteName'), '-secretsuser-', variables('keyvaultName')))]",
+            "scope": "[concat('Microsoft.KeyVault/vaults/', variables('keyvaultName'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('websiteName'))]",
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyvaultName'))]"
+            ],
+            "properties": {
+                "roleDefinitionId": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Authorization/roleDefinitions/', variables('keyvaultSecretsUser'))]",
+                "principalId": "[reference(resourceId('Microsoft.Web/sites', variables('websiteName')), '2020-12-01', 'Full').identity.principalId]",
+                "principalType": "ServicePrincipal"
+            }
+        },
+        {
             "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
             "apiVersion": "2020-01-01",
             "name": "[concat(variables('searchPrivateDnsZoneName'), '/search-vnet-link')]",
@@ -485,6 +600,9 @@
                 "SearchIndexerName": "[concat(parameters('resourcePrefix'), '-indexer')]",
                 "StorageAccountName": "[variables('storageAccountName')]",
                 "StorageContainerAddress": "[concat('https://', variables('storageAccountName'), '.blob.core.windows.net/', variables('containerName'))]",
+                "AzureAd:TenantId": "[subscription().tenantId]",
+                "AzureAd:ClientId": "[parameters('aadApplicationId')]",
+                "AzureAd:ClientSecret": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyvaultName'),';SecretName=AzureAdClientSecret)')]",
                 "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(variables('appInsightsName')).InstrumentationKey]"
             }
         }

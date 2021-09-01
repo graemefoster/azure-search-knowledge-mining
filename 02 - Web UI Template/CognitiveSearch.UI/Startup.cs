@@ -4,14 +4,17 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CognitiveSearch.UI.Configuration;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Identity.Web;
 
 namespace CognitiveSearch.UI
 {
@@ -57,7 +60,16 @@ namespace CognitiveSearch.UI
 
             services.AddSingleton<IFileProvider>(new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")));
 
-            services.AddMvc(options => options.EnableEndpointRouting = false);
+            services.AddMicrosoftIdentityWebAppAuthentication(Configuration);
+            services.AddMvc(options =>
+            {
+                options.EnableEndpointRouting = false;
+                var policy = new AuthorizationPolicyBuilder()
+                    .RequireAuthenticatedUser()
+                    .Build();
+                options.Filters.Add(new AuthorizeFilter(policy));
+            });
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -76,6 +88,8 @@ namespace CognitiveSearch.UI
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseCookiePolicy();
+            app.UseAuthentication();
+            app.UseAuthorization();
             app.UseMvcWithDefaultRoute();
         }
     }
