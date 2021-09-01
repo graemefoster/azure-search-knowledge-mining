@@ -183,12 +183,6 @@ namespace CognitiveSearch.UI.Controllers
         }
 
         [HttpGet]
-        public IActionResult Deploy()
-        {
-            return View();
-        }
-
-        [HttpGet]
         public IActionResult NotAvailable()
         {
             return View();

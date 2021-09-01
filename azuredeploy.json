@@ -475,10 +475,11 @@
                 "WEBSITE_RUN_FROM_PACKAGE": 1,
                 "WEBSITE_NODE_DEFAULT_VERSION": "6.9.1",
                 "SearchServiceName": "[variables('searchServiceName')]",
+                "SearchApiKey" : "[listAdminKeys(variables('searchServiceName'), '2021-04-01-preview').primaryKey]",
                 "SearchIndexName" : "[concat(parameters('resourcePrefix'), '-index')]",
                 "SearchIndexerName" : "[concat(parameters('resourcePrefix'), '-indexer')]",
                 "StorageAccountName" : "[variables('storageAccountName')]",
-                "InstrumentationKey" : "[reference('appInsightsName').InstrumentationKey]"
+                "InstrumentationKey" : "[reference(variables('appInsightsName')).InstrumentationKey]"
             }
         }
     ]
