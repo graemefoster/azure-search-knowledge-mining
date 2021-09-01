@@ -29,13 +29,22 @@ stages:
               projects: "./02 - Web UI Template/CognitiveSearch.UI/CognitiveSearch.UI.csproj"
 
           - task: DotNetCoreCLI@2
-            displayName: "Build the Sample App project - release"
+            displayName: "Build the Portal Web App - release"
             inputs:
               command: "build"
               arguments: "--no-restore --configuration release"
               projects: "./02 - Web UI Template/CognitiveSearch.UI/CognitiveSearch.UI.csproj"
 
-          - publish: $(Build.ArtifactStagingDirectory)/release/netcoreapp3.1/CognitiveSearch.UI.zip
+          - task: DotNetCoreCLI@2
+            displayName: Publish the Portal Web App
+            inputs:
+              command: 'publish'
+              arguments: '--no-build --no-restore --configuration release --output $(Build.ArtifactStagingDirectory)/release'
+              projects: "./02 - Web UI Template/CognitiveSearch.UI/CognitiveSearch.UI.csproj"
+              zipAfterPublish: true
+              publishWebProjects: false
+
+          - publish: $(Build.ArtifactStagingDirectory)/release/CognitiveSearch.UI.zip
             artifact: CognitiveSearchPortal
 
   - stage: "DeployWebApp"
