@@ -461,6 +461,25 @@
             "location": "[toLower(replace(parameters('location'),' ', ''))]",
             "properties": {
             }
+        },
+        {
+            "name": "[concat(variables('websiteName'), '/appSettings')]",
+            "type": "Microsoft.Web/sites/config",
+            "apiVersion": "2020-12-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('websiteName'))]",
+                "[resourceId('Microsoft.Search/searchServices', variables('searchServiceName'))]"
+            ],
+            "properties": {
+                "WEBSITE_ENABLE_SYNC_UPDATE_SITE": "true",
+                "WEBSITE_RUN_FROM_PACKAGE": 1,
+                "WEBSITE_NODE_DEFAULT_VERSION": "6.9.1",
+                "SearchServiceName": "[variables('searchServiceName')]",
+                "SearchIndexName" : "[concat(parameters('resourcePrefix'), '-index')]",
+                "SearchIndexerName" : "[concat(parameters('resourcePrefix'), '-indexer')]",
+                "StorageAccountName" : "[variables('storageAccountName')]",
+                "InstrumentationKey" : "[reference('appInsightsName').InstrumentationKey]"
+            }
         }
     ]
 }
