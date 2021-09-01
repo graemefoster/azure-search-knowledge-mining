@@ -83,12 +83,11 @@ namespace CognitiveSearch.UI.Controllers
                 containerKey += (storageIndex+1).ToString();
             var containerAddress = _configuration.GetSection(containerKey)?.Value.ToLower();
 
-            if (!string.IsNullOrWhiteSpace(accountKey))
+            if (string.IsNullOrWhiteSpace(accountKey))
             {
-                return new BlobContainerClient(new Uri(containerAddress), new StorageSharedKeyCredential(accountName, accountKey));
+                return new BlobContainerClient(new Uri(containerAddress), new DefaultAzureCredential());
             }
-
-            return new BlobContainerClient(new Uri(containerAddress), new DefaultAzureCredential());
+            return new BlobContainerClient(new Uri(containerAddress), new StorageSharedKeyCredential(accountName, accountKey));
         }
     }
 }
