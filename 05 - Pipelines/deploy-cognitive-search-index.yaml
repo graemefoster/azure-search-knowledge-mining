@@ -18,24 +18,24 @@ variables:
 - group: KnowledgeMiningPortal
 
 stages:
-
-- stage: 'PreparePlatform'
-  displayName: 'Deploy Cognitive Search Indexes'
-  jobs:
-  - job: 'DeployIndexes'
-    steps:
-    - task: AzurePowerShell@5
-      name: 'DeployIndex'
-      displayName: 'Deploy Index / Indexer to Cognitive Search Service'
-      inputs:
-        azureSubscription: 'PlatformServiceConnection'
-        scriptType: 'filePath'
-        scriptPath: './05 - Pipelines/Deploy-SearchIndex.ps1'
-        azurePowerShellVersion: latestVersion
-        scriptArguments: 
-          -ResourcePrefix '$(ResourcePrefix)' `
-          -CognitiveServicesKey '$(CognitiveServicesKey)' `
-          -RootDirectory './00 - Resource Deployment/' `
-          -StorageResourceId '$(StorageResourceId)' `
-          -SearchServiceKey '$(SearchServiceKey)'
+  - stage: "DeployWebApp"
+    displayName: "Deploy Cogntive Search Index"
+    jobs:
+      - deployment: "DeployIndexes"
+        environment: "Dev"
+        steps:
+        - task: AzurePowerShell@5
+          name: 'DeployIndex'
+          displayName: 'Deploy Index / Indexer to Cognitive Search Service'
+          inputs:
+            azureSubscription: 'PlatformServiceConnection'
+            scriptType: 'filePath'
+            scriptPath: './05 - Pipelines/Deploy-SearchIndex.ps1'
+            azurePowerShellVersion: latestVersion
+            scriptArguments: 
+              -ResourcePrefix '$(ResourcePrefix)' `
+              -CognitiveServicesKey '$(CognitiveServicesKey)' `
+              -RootDirectory './00 - Resource Deployment/' `
+              -StorageResourceId '$(StorageResourceId)' `
+              -SearchServiceKey '$(SearchServiceKey)'
 
