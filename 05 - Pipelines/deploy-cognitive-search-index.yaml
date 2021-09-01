@@ -23,19 +23,22 @@ stages:
     jobs:
       - deployment: "DeployIndexes"
         environment: "Dev"
-    steps:
-    - task: AzurePowerShell@5
-      name: 'DeployIndex'
-      displayName: 'Deploy Index / Indexer to Cognitive Search Service'
-      inputs:
-        azureSubscription: 'PlatformServiceConnection'
-        scriptType: 'filePath'
-        scriptPath: './05 - Pipelines/Deploy-SearchIndex.ps1'
-        azurePowerShellVersion: latestVersion
-        scriptArguments: 
-          -ResourcePrefix '$(ResourcePrefix)' `
-          -CognitiveServicesKey '$(CognitiveServicesKey)' `
-          -RootDirectory './00 - Resource Deployment/' `
-          -StorageResourceId '$(StorageResourceId)' `
-          -SearchServiceKey '$(SearchServiceKey)'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+              - task: AzurePowerShell@5
+                name: 'DeployIndex'
+                displayName: 'Deploy Index / Indexer to Cognitive Search Service'
+                inputs:
+                  azureSubscription: 'PlatformServiceConnection'
+                  scriptType: 'filePath'
+                  scriptPath: './05 - Pipelines/Deploy-SearchIndex.ps1'
+                  azurePowerShellVersion: latestVersion
+                  scriptArguments: 
+                    -ResourcePrefix '$(ResourcePrefix)' `
+                    -CognitiveServicesKey '$(CognitiveServicesKey)' `
+                    -RootDirectory './00 - Resource Deployment/' `
+                    -StorageResourceId '$(StorageResourceId)' `
+                    -SearchServiceKey '$(SearchServiceKey)'
 
