@@ -71,17 +71,7 @@ namespace CognitiveSearch.UI
                 clientOptions.AddPolicy(new SearchIdPipelinePolicy(), HttpPipelinePosition.PerCall);
 
                 // Create an HTTP reference to the catalog index
-                if (string.IsNullOrWhiteSpace(apiKey))
-                {
-                    _searchIndexClient =
-                        new SearchIndexClient(new Uri($"https://{searchServiceName}.search.windows.net/"),
-                            new AzureKeyCredential(apiKey), options: clientOptions);
-                }
-                else
-                {
-                    _searchIndexClient = new SearchIndexClient(new Uri($"https://{searchServiceName}.search.windows.net/"), new AzureKeyCredential(apiKey), options: clientOptions);
-                }
-
+                _searchIndexClient = new SearchIndexClient(new Uri($"https://{searchServiceName}.search.windows.net/"), new AzureKeyCredential(apiKey), options: clientOptions);
                 _searchClient = _searchIndexClient.GetSearchClient(IndexName);
 
                 Schema = new SearchSchema().AddFields(_searchIndexClient.GetIndex(IndexName).Value.Fields);

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using System.IO;
 using System.Web;
+using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage;
 using Azure.Storage.Blobs.Models;
@@ -82,8 +83,12 @@ namespace CognitiveSearch.UI.Controllers
                 containerKey += (storageIndex+1).ToString();
             var containerAddress = _configuration.GetSection(containerKey)?.Value.ToLower();
 
-            var container = new BlobContainerClient(new Uri(containerAddress), new StorageSharedKeyCredential(accountName, accountKey));
-            return container;
+            if (string.IsNullOrWhiteSpace(accountKey))
+            {
+                return new BlobContainerClient(new Uri(containerAddress), new StorageSharedKeyCredential(accountName, accountKey));
+            }
+
+            return new BlobContainerClient(new Uri(containerAddress), new DefaultAzureCredential());
         }
     }
 }
