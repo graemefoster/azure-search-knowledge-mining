@@ -479,7 +479,7 @@
                 "SearchIndexName" : "[concat(parameters('resourcePrefix'), '-index')]",
                 "SearchIndexerName" : "[concat(parameters('resourcePrefix'), '-indexer')]",
                 "StorageAccountName" : "[variables('storageAccountName')]",
-                "InstrumentationKey" : "[reference(variables('appInsightsName')).InstrumentationKey]"
+                "APPINSIGHTS_INSTRUMENTATIONKEY" : "[reference(variables('appInsightsName')).InstrumentationKey]"
             }
         }
     ]
