@@ -35,7 +35,7 @@ stages:
               arguments: "--no-restore --configuration release"
               projects: "./02 - Web UI Template/CognitiveSearch.UI/CognitiveSearch.UI.csproj"
 
-          - publish: $(Build.ArtifactStagingDirectory)/release/CognitiveSearch.UI.zip
+          - publish: $(Build.ArtifactStagingDirectory)/release/netcoreapp3.1/CognitiveSearch.UI.zip
             artifact: CognitiveSearchPortal
 
   - stage: "DeployWebApp"
