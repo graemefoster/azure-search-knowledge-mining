@@ -97,6 +97,7 @@
     "variables": {
         "hostingPlanName": "[concat(parameters('resourcePrefix'), '-plan')]",
         "storageAccountName": "[concat(parameters('resourcePrefix'), 'str')]",
+        "containerName": "documents",
         "websiteName": "[concat(parameters('resourcePrefix'), '-site')]",
         "websitePrivateEndpointName": "[concat(parameters('resourcePrefix'), '-site-private-endpoint')]",
         "storagePrivateEndpointName": "[concat(parameters('resourcePrefix'), '-storage-private-endpoint')]",
@@ -149,7 +150,7 @@
                 {
                     "type": "blobServices/containers",
                     "apiVersion": "2021-04-01",
-                    "name": "default/documents",
+                    "name": "[concat('default/', variables('containerName'))]",
                     "dependsOn": [
                         "[variables('storageAccountName')]"
                     ]
@@ -216,7 +217,11 @@
                 "type": "SystemAssigned"
             },
             "properties": {
-                "serverFarmId": "[variables('hostingPlanName')]"
+                "serverFarmId": "[variables('hostingPlanName')]",
+                "siteConfig": {
+                    "alwaysOn": true,
+                    "vnetRouteAllEnabled": true
+                }
             },
             "resources": [
                 {
@@ -228,7 +233,7 @@
                     ],
                     "properties": {
                         "subnetResourceId": "[parameters('vnetIntregrationSubnetId')]",
-                        "isSwift": true
+                        "isSwift": true,
                     }
                 }
             ]
@@ -475,11 +480,12 @@
                 "WEBSITE_RUN_FROM_PACKAGE": 1,
                 "WEBSITE_NODE_DEFAULT_VERSION": "6.9.1",
                 "SearchServiceName": "[variables('searchServiceName')]",
-                "SearchApiKey" : "[listAdminKeys(variables('searchServiceName'), '2021-04-01-preview').primaryKey]",
-                "SearchIndexName" : "[concat(parameters('resourcePrefix'), '-index')]",
-                "SearchIndexerName" : "[concat(parameters('resourcePrefix'), '-indexer')]",
-                "StorageAccountName" : "[variables('storageAccountName')]",
-                "APPINSIGHTS_INSTRUMENTATIONKEY" : "[reference(variables('appInsightsName')).InstrumentationKey]"
+                "SearchApiKey": "[listAdminKeys(variables('searchServiceName'), '2021-04-01-preview').primaryKey]",
+                "SearchIndexName": "[concat(parameters('resourcePrefix'), '-index')]",
+                "SearchIndexerName": "[concat(parameters('resourcePrefix'), '-indexer')]",
+                "StorageAccountName": "[variables('storageAccountName')]",
+                "StorageContainerAddress": "[concat('https://', variables('storageAccountName'), '.blob.core.windows.net/', variables('containerName'))]",
+                "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(variables('appInsightsName')).InstrumentationKey]"
             }
         }
     ]
