@@ -18,8 +18,12 @@ variables:
 - group: KnowledgeMiningPortal
 
 stages:
-  - stage: "DeployWebApp"
+  - stage: "FetchSource"
+    displayName: "Ensure Source"
+  - stage: "DeployIndex"
     displayName: "Deploy Cogntive Search Index"
+    dependsOn:
+      - FetchSource
     jobs:
       - deployment: "DeployIndexes"
         environment: "Dev"

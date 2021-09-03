@@ -101,10 +101,11 @@
         }
     },
     "variables": {
+        "random": "[uniqueString(resourceGroup().id)]",
         "hostingPlanName": "[concat(parameters('resourcePrefix'), '-plan')]",
         "storageAccountName": "[concat(parameters('resourcePrefix'), 'str')]",
         "containerName": "documents",
-        "keyvaultName": "[concat(parameters('resourcePrefix'), '-kv')]",
+        "keyvaultName": "[concat(parameters('resourcePrefix'), variables('random'), '-kv')]",
         "websiteName": "[concat(parameters('resourcePrefix'), '-site')]",
         "websitePrivateEndpointName": "[concat(parameters('resourcePrefix'), '-site-private-endpoint')]",
         "storagePrivateEndpointName": "[concat(parameters('resourcePrefix'), '-storage-private-endpoint')]",
@@ -453,7 +454,7 @@
                 "type": "SystemAssigned"
             },
             "properties": {
-                "publicNetworkAccess": "enabled"
+                "publicNetworkAccess": "disabled"
             }
         },
         {
