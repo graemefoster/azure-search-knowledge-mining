@@ -332,7 +332,8 @@ function GetMetadataHTML(result) {
                             value = Base64Decode(value);
                     }
 
-                    if (key === "people" || key === "organizations" || key === "locations") {
+                    if (key === "people" || key === "organizations" || key === "locations" || key === "quantities"
+                        || key === "dateTimes" || key === "urls" || key === "emails" || key === "namedEntities") {
                         value = SpaceArray(value);
                     }
 

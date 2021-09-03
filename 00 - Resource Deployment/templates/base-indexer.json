@@ -31,6 +31,26 @@
       "targetFieldName": "locations"
     },
     {
+      "sourceFieldName": "/document/quantities",
+      "targetFieldName": "quantities"
+    },
+    {
+      "sourceFieldName": "/document/dateTimes",
+      "targetFieldName": "dateTimes"
+    },
+    {
+      "sourceFieldName": "/document/urls",
+      "targetFieldName": "urls"
+    },
+    {
+      "sourceFieldName": "/document/emails",
+      "targetFieldName": "emails"
+    },
+    {
+      "sourceFieldName": "/document/entities",
+      "targetFieldName": "namedEntities"
+    },
+    {
       "sourceFieldName": "/document/pages/*/keyPhrases/*",
       "targetFieldName": "keyPhrases"
     }

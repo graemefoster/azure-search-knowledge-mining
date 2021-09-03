@@ -97,42 +97,36 @@
       ],
       "outputs": [
         {
-          "name": "organizations",
-          "targetName": "organizations"
-        }
-      ]
-    },
-    {
-      "@odata.type": "#Microsoft.Skills.Text.EntityRecognitionSkill",
-      "categories": [ "Location" ],
-      "context": "/document",
-      "inputs": [
-        {
-          "name": "text",
-          "source": "/document/merged_text"
-        }
-      ],
-      "outputs": [
+          "name": "persons",
+          "targetName": "persons"
+        },
         {
           "name": "locations",
           "targetName": "locations"
-        }
-      ]
-    },
-    {
-      "@odata.type": "#Microsoft.Skills.Text.EntityRecognitionSkill",
-      "categories": [ "Person" ],
-      "context": "/document",
-      "inputs": [
+        },
         {
-          "name": "text",
-          "source": "/document/merged_text"
-        }
-      ],
-      "outputs": [
+          "name": "organizations",
+          "targetName": "organizations"
+        },
         {
-          "name": "persons",
-          "targetName": "persons"
+          "name": "quantities",
+          "targetName": "quantities"
+        },
+        {
+          "name": "dateTimes",
+          "targetName": "dateTimes"
+        },
+        {
+          "name": "urls",
+          "targetName": "urls"
+        },
+        {
+          "name": "emails",
+          "targetName": "emails"
+        },
+        {
+          "name": "entities",
+          "targetName": "entities"
         }
       ]
     }

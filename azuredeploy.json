@@ -240,7 +240,7 @@
             ],
             "properties": {
                 "allowBlobPublicAccess": false,
-                "allowSharedKeyAccess": false,
+                "allowSharedKeyAccess": true,
                 "networkAcls": {
                     "defaultAction": "Allow",
                     "bypass": "Logging, Metrics"

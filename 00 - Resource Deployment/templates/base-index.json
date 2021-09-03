@@ -41,6 +41,46 @@
       "facetable": true
     },
     {
+      "name": "quantities",
+      "type": "Collection(Edm.String)",
+      "searchable": true,
+      "sortable": false,
+      "filterable": true,
+      "facetable": true
+    },
+    {
+      "name": "dateTimes",
+      "type": "Collection(Edm.String)",
+      "searchable": true,
+      "sortable": false,
+      "filterable": true,
+      "facetable": true
+    },
+    {
+      "name": "urls",
+      "type": "Collection(Edm.String)",
+      "searchable": true,
+      "sortable": false,
+      "filterable": true,
+      "facetable": true
+    },
+    {
+      "name": "emails",
+      "type": "Collection(Edm.String)",
+      "searchable": true,
+      "sortable": false,
+      "filterable": true,
+      "facetable": true
+    },    
+    {
+      "name": "namedEntities",
+      "type": "Collection(Edm.String)",
+      "searchable": true,
+      "sortable": false,
+      "filterable": true,
+      "facetable": true
+    },    
+    {
       "name": "metadata_storage_path",
       "type": "Edm.String",
       "key": true,
