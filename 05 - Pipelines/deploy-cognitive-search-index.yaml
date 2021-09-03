@@ -21,7 +21,9 @@ stages:
   - stage: "FetchSource"
     displayName: "Ensure Source"
     jobs:
-      - bash: echo 'No-Op'
+      - job: "No-Op"
+        steps:
+        - bash: echo 'No-Op'
   - stage: "DeployIndex"
     displayName: "Deploy Cogntive Search Index"
     dependsOn:
