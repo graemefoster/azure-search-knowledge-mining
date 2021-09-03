@@ -21,7 +21,7 @@ stages:
   - stage: "FetchSource"
     displayName: "Ensure Source"
     jobs:
-      - job: "No-Op"
+      - job: "NoOp"
         steps:
         - bash: echo 'No-Op'
   - stage: "DeployIndex"
