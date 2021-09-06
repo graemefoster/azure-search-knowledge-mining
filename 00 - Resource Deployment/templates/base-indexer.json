@@ -47,7 +47,7 @@
       "targetFieldName": "emails"
     },
     {
-      "sourceFieldName": "/document/entities",
+      "sourceFieldName": "/document/entities/*/name",
       "targetFieldName": "namedEntities"
     },
     {
