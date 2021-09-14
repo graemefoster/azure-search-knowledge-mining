@@ -80,7 +80,7 @@ namespace CognitiveSearch.UI
                             return issuer;
                         }
 
-                        throw new SecurityTokenInvalidIssuerException("Unexpected tenant");
+                        throw new SecurityTokenInvalidIssuerException($"Unexpected issuer: {issuer}");
                     };
                     options.Events.OnAuthenticationFailed += context =>
                     {
