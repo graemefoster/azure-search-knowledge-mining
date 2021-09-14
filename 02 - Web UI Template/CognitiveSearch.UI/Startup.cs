@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using CognitiveSearch.UI.Configuration;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -15,6 +17,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Identity.Web;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
 
 namespace CognitiveSearch.UI
 {
@@ -59,8 +63,25 @@ namespace CognitiveSearch.UI
             services.AddSingleton(appConfig);
 
             services.AddSingleton<IFileProvider>(new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")));
+            
+            services
+                .AddMicrosoftIdentityWebAppAuthentication(Configuration);
 
-            services.AddMicrosoftIdentityWebAppAuthentication(Configuration);
+            var validTenants = Configuration.GetSection("ValidTenants").Get<string[]>() ?? Array.Empty<string>();
+            services.Configure<OpenIdConnectOptions>(
+                OpenIdConnectDefaults.AuthenticationScheme,
+                options =>
+                {
+                    options.TokenValidationParameters.IssuerValidator = (issuer, token, parameters) =>
+                    {
+                        if (validTenants.Contains(issuer))
+                        {
+                            return issuer;
+                        }
+                        throw new SecurityTokenInvalidIssuerException("Unexpected tenant");
+                    };
+                });
+            
             services.AddMvc(options =>
             {
                 options.EnableEndpointRouting = false;
