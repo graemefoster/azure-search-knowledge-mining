@@ -8,6 +8,7 @@ trigger:
     include:
       - main
       - feature/private-deployment
+      - feature/aad
   paths:
     include:
       - "02 - Web UI Template"

@@ -62,8 +62,9 @@ namespace CognitiveSearch.UI
             };
             services.AddSingleton(appConfig);
 
-            services.AddSingleton<IFileProvider>(new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")));
-            
+            services.AddSingleton<IFileProvider>(
+                new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot")));
+
             services
                 .AddMicrosoftIdentityWebAppAuthentication(Configuration);
 
@@ -78,10 +79,20 @@ namespace CognitiveSearch.UI
                         {
                             return issuer;
                         }
+
                         throw new SecurityTokenInvalidIssuerException("Unexpected tenant");
                     };
+                    options.Events.OnAuthenticationFailed += context =>
+                    {
+                        if (context.Exception is SecurityTokenInvalidIssuerException)
+                        {
+                            context.Response.Redirect("/Home/Error");
+                        }
+                        context.HandleResponse();
+                        return Task.CompletedTask;
+                    };
                 });
-            
+
             services.AddMvc(options =>
             {
                 options.EnableEndpointRouting = false;
@@ -90,7 +101,6 @@ namespace CognitiveSearch.UI
                     .Build();
                 options.Filters.Add(new AuthorizeFilter(policy));
             });
-
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
