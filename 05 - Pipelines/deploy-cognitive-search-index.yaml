@@ -23,7 +23,7 @@ stages:
     jobs:
       - job: "NoOp"
         steps:
-        - bash: echo 'No-Op'
+        - script: echo 'No-Op'
   - stage: "DeployIndex"
     displayName: "Deploy Cogntive Search Index"
     dependsOn:
