@@ -68,14 +68,14 @@ namespace CognitiveSearch.UI
             services
                 .AddMicrosoftIdentityWebAppAuthentication(Configuration);
 
-            var validTenants = Configuration.GetSection("ValidTenants").Get<string[]>() ?? Array.Empty<string>();
+            var validTenants = Configuration.GetSection("ValidTenants").Get<ValidUsers[]>() ?? Array.Empty<ValidUsers>();
             services.Configure<OpenIdConnectOptions>(
                 OpenIdConnectDefaults.AuthenticationScheme,
                 options =>
                 {
                     options.TokenValidationParameters.IssuerValidator = (issuer, token, parameters) =>
                     {
-                        if (validTenants.Contains(issuer))
+                        if (validTenants.Any(x => x.Issuer == issuer))
                         {
                             return issuer;
                         }
@@ -98,6 +98,16 @@ namespace CognitiveSearch.UI
                 options.EnableEndpointRouting = false;
                 var policy = new AuthorizationPolicyBuilder()
                     .RequireAuthenticatedUser()
+                    .RequireAssertion(context =>
+                    {
+                        if (!context.User.Identity.IsAuthenticated) return false;
+                        var user = context.User.Claims.First(x => x.Type == "preferred_username");
+                        var issuer = user.Issuer;
+                        var allowedUsersFromIssuer = validTenants.SingleOrDefault(x => x.Issuer == issuer);
+                        if (allowedUsersFromIssuer == null) return false;
+                        var allowed = allowedUsersFromIssuer.Users.Contains(user.Value, StringComparer.InvariantCultureIgnoreCase);
+                        return allowed;
+                    })
                     .Build();
                 options.Filters.Add(new AuthorizeFilter(policy));
             });
@@ -123,5 +133,11 @@ namespace CognitiveSearch.UI
             app.UseAuthorization();
             app.UseMvcWithDefaultRoute();
         }
+    }
+
+    public class ValidUsers
+    {
+        public string Issuer { get; set; }
+        public string[] Users { get; set; }
     }
 }
